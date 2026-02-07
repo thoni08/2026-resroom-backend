@@ -56,4 +56,34 @@ public class RoomsController : ControllerBase
 
         return Ok(roomResponseDto);
     }
+
+    [HttpPost]
+    public async Task<IActionResult> CreateRoom([FromBody] CreateRoomDto request)
+    {
+        var room = new Room
+        {
+            Name = request.Name,
+            Capacity = request.Capacity,
+            Location = request.Location,
+            Description = request.Description,
+            CreatedAt = DateTime.Now,
+            UpdatedAt = DateTime.Now
+        };
+
+        _context.Rooms.Add(room);
+        await _context.SaveChangesAsync();
+
+        var roomResponseDto = new RoomResponseDto
+        {
+            Id = room.Id,
+            Name = room.Name,
+            Capacity = room.Capacity,
+            Location = room.Location,
+            Description = room.Description,
+            CreatedAt = room.CreatedAt,
+            UpdatedAt = room.UpdatedAt
+        };
+
+        return CreatedAtAction(nameof(GetRooms), new { id = room.Id }, roomResponseDto);
+    }
 }
