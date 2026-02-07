@@ -97,4 +97,4 @@ This project follows the **Clean Architecture** principles within a monolithic A
 5.  Submit a pull request.
 
 ## License
-This project is licensed under the MIT License.
+This project is licensed under the Unlicense License.
