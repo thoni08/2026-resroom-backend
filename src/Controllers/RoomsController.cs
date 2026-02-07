@@ -86,4 +86,41 @@ public class RoomsController : ControllerBase
 
         return CreatedAtAction(nameof(GetRooms), new { id = room.Id }, roomResponseDto);
     }
+
+    [HttpPut("{id}")]
+    public async Task<IActionResult> UpdateRoom(int id, [FromBody] UpdateRoomDto request)
+    {
+        var room = await _context.Rooms.FindAsync(id);
+        if (room == null)
+            return NotFound($"Room with ID {id} not found.");
+
+        if (request.Name != null)
+            room.Name = request.Name;
+        
+        if (request.Capacity.HasValue)
+            room.Capacity = request.Capacity.Value;
+
+        if (request.Location != null)
+            room.Location = request.Location;
+
+        if (request.Description != null)
+            room.Description = request.Description;
+
+        room.UpdatedAt = DateTime.Now;
+
+        await _context.SaveChangesAsync();
+
+        var dto = new RoomResponseDto
+        {
+            Id = room.Id,
+            Name = room.Name,
+            Capacity = room.Capacity,
+            Location = room.Location,
+            Description = room.Description,
+            CreatedAt = room.CreatedAt,
+            UpdatedAt = room.UpdatedAt
+        };
+
+        return Ok(new { message = $"Room with ID {id} updated successfully" });
+    }
 }
