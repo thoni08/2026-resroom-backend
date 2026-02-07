@@ -11,8 +11,6 @@ public class Room
     [MaxLength(100)]
     public string Name { get; set; } = string.Empty;
 
-    [Required]
-    [Range(1, 1000, ErrorMessage = "Capacity must be between 1 and 1000.")]
     public int Capacity { get; set; }
 
     [Required]
