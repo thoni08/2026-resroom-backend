@@ -123,4 +123,17 @@ public class RoomsController : ControllerBase
 
         return Ok(new { message = $"Room with ID {id} updated successfully" });
     }
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteRoom(int id)
+    {
+        var room = await _context.Rooms.FindAsync(id);
+        if (room == null)
+            return NotFound($"Room with ID {id} not found.");
+
+        room.DeletedAt = DateTime.Now;
+        await _context.SaveChangesAsync();
+
+        return Ok(new { message = $"Room with ID {id} deleted successfully" });
+    }
 }
