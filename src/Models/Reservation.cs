@@ -3,6 +3,14 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ResRoomApi.Models;
 
+public enum ReservationStatus
+{
+    Pending,
+    Approved,
+    Rejected,
+    Cancelled
+}
+
 public class Reservation
 {
     [Key]
@@ -26,6 +34,9 @@ public class Reservation
     [Required]
     [MaxLength(300)]
     public string Purpose { get; set; } = string.Empty;
+
+    [Required]
+    public ReservationStatus Status { get; set; } = ReservationStatus.Pending;
     
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
