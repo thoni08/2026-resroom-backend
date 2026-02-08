@@ -88,4 +88,56 @@ public class ReservationsController : ControllerBase
 
         return Ok(reservationResponseDto);
     }
+
+    [HttpPost]
+    public async Task<IActionResult> CreateReservation([FromBody] CreateReservationDto request)
+    {
+        if (request.RoomId <= 0)
+            return BadRequest(new { message = "Invalid Room ID." });
+
+        if (request.StartTime <= DateTime.Now)
+            return BadRequest(new { message = "Start time must be in the future." });
+
+        if (request.EndTime <= DateTime.Now)
+            return BadRequest(new { message = "End time must be in the future." });
+
+        if (request.StartTime >= request.EndTime)
+            return BadRequest(new { message = "End time must be after start time." });
+
+        if (!await _reservationService.IsRoomAvailableAsync(request.RoomId, request.StartTime, request.EndTime))
+            return Conflict(new { message = "Room is not available for the selected time." });
+
+        if (!Enum.TryParse<ReservationStatus>(request.Status, ignoreCase: true, out var status))
+            return BadRequest(new { message = "Invalid reservation status." });
+
+        var reservation = new Reservation
+        {
+            RoomId = request.RoomId,
+            StartTime = request.StartTime,
+            EndTime = request.EndTime,
+            ReservedBy = request.ReservedBy,
+            Purpose = request.Purpose,
+            Status = status,
+            CreatedAt = DateTime.Now,
+            UpdatedAt = DateTime.Now
+        };
+
+        _context.Reservations.Add(reservation);
+        await _context.SaveChangesAsync();
+
+        var reservationResponseDto = new ReservationResponseDto
+        {
+            Id = reservation.Id,
+            RoomId = reservation.RoomId,
+            StartTime = reservation.StartTime,
+            EndTime = reservation.EndTime,
+            ReservedBy = reservation.ReservedBy,
+            Purpose = reservation.Purpose,
+            Status = reservation.Status.ToString(),
+            CreatedAt = reservation.CreatedAt,
+            UpdatedAt = reservation.UpdatedAt
+        };
+
+        return CreatedAtAction(nameof(GetReservation), new { id = reservation.Id }, reservationResponseDto);
+    }
 }
