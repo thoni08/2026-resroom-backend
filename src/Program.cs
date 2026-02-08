@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using DotNetEnv;
 using ResRoomApi.Data;
+using ResRoomApi.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -36,6 +37,9 @@ builder.Services.AddCors(options =>
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
         options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter()));
+
+// Register ReservationService for dependency injection
+builder.Services.AddScoped<IReservationService, ReservationService>();
 
 // Enable Swagger for API documentation
 builder.Services.AddEndpointsApiExplorer();
