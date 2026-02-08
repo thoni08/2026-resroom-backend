@@ -1,7 +1,9 @@
+using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ResRoomApi.Data;
 using ResRoomApi.DTOs.Reservations;
+using ResRoomApi.Helpers;
 using ResRoomApi.Models;
 using ResRoomApi.Services;
 
@@ -21,39 +23,84 @@ public class ReservationsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetReservations([FromQuery] string? view = "active")
+    public async Task<IActionResult> GetReservations([FromQuery] ReservationParams reservationParams)
     {
         var query = _context.Reservations.AsQueryable();
 
+        if (!string.IsNullOrEmpty(reservationParams.SearchTerm))
+        {
+            var searchTerm = reservationParams.SearchTerm.ToLower();
+            query = query.Where(r => r.Purpose.ToLower().Contains(searchTerm));
+        }
+
+        if (reservationParams.MinDate.HasValue)
+        {
+            var minDateTime = reservationParams.MinDate.Value.ToDateTime(new TimeOnly(0, 0));
+            query = query.Where(r => r.StartTime >= minDateTime);
+        }
+
+        if (reservationParams.MaxDate.HasValue)
+        {
+            var maxDateTime = reservationParams.MaxDate.Value.ToDateTime(new TimeOnly(23, 59));
+            query = query.Where(r => r.EndTime <= maxDateTime);
+        }
+
+        if (!string.IsNullOrEmpty(reservationParams.ReservedBy))
+        {
+            var reservedByLower = reservationParams.ReservedBy.ToLower();
+            query = query.Where(r => r.ReservedBy.ToLower().Contains(reservedByLower));
+        }
+
+        if (reservationParams.RoomId.HasValue)
+            query = query.Where(r => r.RoomId == reservationParams.RoomId.Value);
+
+        if (!string.IsNullOrEmpty(reservationParams.Status))
+        {
+            if (Enum.TryParse<ReservationStatus>(reservationParams.Status, ignoreCase: true, out var status))
+            {
+                query = query.Where(r => r.Status == status);
+            }
+        }
+
         var currentTime = DateTime.Now;
-
-        if (view == "history")
+        query = reservationParams.View?.ToLower() switch
         {
-            // History: Past dates OR Rejected/Cancelled status
-            query = query.Where(r => r.EndTime < currentTime || 
-                                     r.Status == ReservationStatus.Rejected || 
-                                     r.Status == ReservationStatus.Cancelled);
-                                    
-            // Sort history by newest first
-            query = query.OrderByDescending(r => r.StartTime);
-        }
-        else
-        {
-            // List: Future dates AND Active status
-            query = query.Where(r => r.EndTime >= currentTime && 
-                                     (r.Status == ReservationStatus.Pending || 
-                                     r.Status == ReservationStatus.Approved));
-                                    
-            // Sort upcoming list by soonest first
-            query = query.OrderBy(r => r.StartTime);
-        }
+            "history" => query.Where(r => r.EndTime < currentTime || 
+                                          r.Status == ReservationStatus.Rejected || 
+                                          r.Status == ReservationStatus.Cancelled)
+                             .OrderByDescending(r => r.StartTime),
+            "active" => query.Where(r => r.EndTime >= currentTime && 
+                                         (r.Status == ReservationStatus.Pending || 
+                                          r.Status == ReservationStatus.Approved))
+                            .OrderBy(r => r.StartTime),
+            _ => query.OrderByDescending(r => r.StartTime)
+        };
 
-        var reservations = await query.ToListAsync();
+        query = reservationParams.SortBy?.ToLower() switch
+        {
+            "roomname" => reservationParams.SortDirection == "desc" 
+                ? query.OrderByDescending(r => r.Room != null ? r.Room.Name : string.Empty) 
+                : query.OrderBy(r => r.Room != null ? r.Room.Name : string.Empty),
+            "starttime" => reservationParams.SortDirection == "desc" 
+                ? query.OrderByDescending(r => r.StartTime) 
+                : query.OrderBy(r => r.StartTime),
+            "endtime" => reservationParams.SortDirection == "desc" 
+                ? query.OrderByDescending(r => r.EndTime) 
+                : query.OrderBy(r => r.EndTime),
+            "reservedby" => reservationParams.SortDirection == "desc" 
+                ? query.OrderByDescending(r => r.ReservedBy) 
+                : query.OrderBy(r => r.ReservedBy),
+            "status" => reservationParams.SortDirection == "desc" 
+                ? query.OrderByDescending(r => r.Status) 
+                : query.OrderBy(r => r.Status),
+            _ => query // Default sort already applied above
+        };
         
-        var reservationResponseDtos = reservations.Select(r => new ReservationResponseDto
+        var dtoQuery = query.Select(r => new ReservationResponseDto
         {
             Id = r.Id,
             RoomId = r.RoomId,
+            RoomName = r.Room != null ? r.Room.Name : string.Empty,
             StartTime = r.StartTime,
             EndTime = r.EndTime,
             ReservedBy = r.ReservedBy,
@@ -61,9 +108,27 @@ public class ReservationsController : ControllerBase
             Status = r.Status.ToString(),
             CreatedAt = r.CreatedAt,
             UpdatedAt = r.UpdatedAt
-        }).ToList();
+        });
 
-        return Ok(reservationResponseDtos);
+        var pagedList = await PagedList<ReservationResponseDto>.CreateAsync(
+            dtoQuery,
+            reservationParams.PageNumber,
+            reservationParams.PageSize
+        );
+
+        var paginationMetadata = new
+        {
+            pagedList.TotalCount,
+            pagedList.PageSize,
+            pagedList.CurrentPage,
+            pagedList.TotalPages,
+            pagedList.HasNext,
+            pagedList.HasPrevious
+        };
+
+        Response.Headers.Append("X-Pagination", JsonSerializer.Serialize(paginationMetadata));
+
+        return Ok(pagedList);
     }
 
     [HttpGet("{id}")]
@@ -92,8 +157,9 @@ public class ReservationsController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreateReservation([FromBody] CreateReservationDto request)
     {
-        if (request.RoomId <= 0)
-            return BadRequest(new { message = "Invalid Room ID." });
+        var roomExists = await _context.Rooms.AnyAsync(r => r.Id == request.RoomId);
+        if (!roomExists)
+            return NotFound(new { message = $"Room with ID {request.RoomId} not found." });
 
         if (request.StartTime <= DateTime.Now)
             return BadRequest(new { message = "Start time must be in the future." });
@@ -146,7 +212,7 @@ public class ReservationsController : ControllerBase
     {
         var reservation = await _context.Reservations.FindAsync(id);
         if (reservation == null)
-            return NotFound($"Reservation with ID {id} not found.");
+            return NotFound(new { message = $"Reservation with ID {id} not found." });
 
         var newRoomId = request.RoomId ?? reservation.RoomId;
         var newStart = request.StartTime ?? reservation.StartTime;
@@ -157,10 +223,14 @@ public class ReservationsController : ControllerBase
             (request.EndTime.HasValue && request.EndTime.Value != reservation.EndTime) ||
             (request.RoomId.HasValue && request.RoomId.Value != reservation.RoomId);
 
-        if (request.RoomId.HasValue && request.RoomId <= 0)
-            return BadRequest(new { message = "Invalid Room ID." });
-        else
+        if (request.RoomId.HasValue)
+        {
+            var roomExists = await _context.Rooms.AnyAsync(r => r.Id == request.RoomId.Value);
+            if (!roomExists)
+                return NotFound(new { message = $"Room with ID {request.RoomId.Value} not found." });
+
             reservation.RoomId = newRoomId;
+        }
 
         if (request.StartTime.HasValue)
         {
@@ -223,7 +293,7 @@ public class ReservationsController : ControllerBase
     {
         var reservation = await _context.Reservations.FindAsync(id);
         if (reservation == null)
-            return NotFound($"Reservation with ID {id} not found.");
+            return NotFound(new { message = $"Reservation with ID {id} not found." });
 
         reservation.DeletedAt = DateTime.Now;
         await _context.SaveChangesAsync();

@@ -5,6 +5,7 @@ namespace ResRoomApi.DTOs.Reservations;
 public class CreateReservationDto
 {
     [Required(ErrorMessage = "A room must be selected.")]
+    [Range(1, int.MaxValue, ErrorMessage = "Invalid Room ID.")]
     public int RoomId { get; set; }
 
     [Required(ErrorMessage = "Start time is required.")]
