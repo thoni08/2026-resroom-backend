@@ -85,10 +85,11 @@ This project follows the **Clean Architecture** principles within a monolithic A
 ```text
 /src
 ├── Controllers/ # API Endpoints
-├── Models/ # Database Entities
-├── DTOs/ # Data Transfer Objects for API requests/responses & Input Validation
 ├── Data/ # DbContext and Config
+├── DTOs/ # Data Transfer Objects for API requests/responses & Input Validation
 ├── Migrations/ # EF Core Migrations
+├── Models/ # Database Entities
+├── Services/ # Isolates complex controller logic and domain rules
 └── Program.cs # App Entry Point & DI Config
 ```
 
