@@ -22,14 +22,17 @@ builder.Services.AddDbContext<ResRoomApiContext>(options =>
         }));
 
 // Configure CORS to allow requests from specific origins
+var allowedOrigins = Environment.GetEnvironmentVariable("ALLOWED_ORIGINS")?.Split(';') 
+    ?? throw new InvalidOperationException("Allowed origins failed to load from env.");
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowSpecificOrigins", policy =>
     {
         policy
-            .WithOrigins("http://localhost:5173")
+            .WithOrigins(allowedOrigins.ToArray())
             .AllowAnyHeader()
-            .AllowAnyMethod();
+            .AllowAnyMethod()
+            .WithExposedHeaders("X-Pagination");
     });
 });
 
