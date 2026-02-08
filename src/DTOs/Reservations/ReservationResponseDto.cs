@@ -4,6 +4,7 @@ public class ReservationResponseDto
 {
     public int Id { get; set; }
     public int RoomId { get; set; }
+    public string RoomName { get; set; } = null!;
     public DateTime StartTime { get; set; }
     public DateTime EndTime { get; set; }
     public string ReservedBy { get; set; } = null!;
