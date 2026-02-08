@@ -140,4 +140,81 @@ public class ReservationsController : ControllerBase
 
         return CreatedAtAction(nameof(GetReservation), new { id = reservation.Id }, reservationResponseDto);
     }
+
+    [HttpPut("{id}")]
+    public async Task<IActionResult> UpdateReservation(int id, [FromBody] UpdateReservationDto request)
+    {
+        var reservation = await _context.Reservations.FindAsync(id);
+        if (reservation == null)
+            return NotFound($"Reservation with ID {id} not found.");
+
+        var newRoomId = request.RoomId ?? reservation.RoomId;
+        var newStart = request.StartTime ?? reservation.StartTime;
+        var newEnd = request.EndTime ?? reservation.EndTime;
+
+        var timeOrRoomChanged =
+            (request.StartTime.HasValue && request.StartTime.Value != reservation.StartTime) ||
+            (request.EndTime.HasValue && request.EndTime.Value != reservation.EndTime) ||
+            (request.RoomId.HasValue && request.RoomId.Value != reservation.RoomId);
+
+        if (request.RoomId.HasValue && request.RoomId <= 0)
+            return BadRequest(new { message = "Invalid Room ID." });
+        else
+            reservation.RoomId = newRoomId;
+
+        if (request.StartTime.HasValue)
+        {
+            if (newStart <= DateTime.Now)
+                return BadRequest(new { message = "Start time must be in the future." });
+
+            reservation.StartTime = newStart;
+        }
+
+        if (request.EndTime.HasValue)
+        {
+            if (newEnd <= DateTime.Now)
+                return BadRequest(new { message = "End time must be in the future." });
+
+            reservation.EndTime = newEnd;
+        }
+
+        if (newStart >= newEnd)
+            return BadRequest(new { message = "End time must be after start time." });
+
+        if (timeOrRoomChanged &&
+            !await _reservationService.IsRoomAvailableAsync(newRoomId, newStart, newEnd))
+            return Conflict(new { message = "Room is not available for the selected time." });
+
+        if (!string.IsNullOrEmpty(request.ReservedBy))
+            reservation.ReservedBy = request.ReservedBy;
+
+        if (!string.IsNullOrEmpty(request.Purpose))
+            reservation.Purpose = request.Purpose;
+
+        if (!string.IsNullOrEmpty(request.Status))
+        {
+            if (!Enum.TryParse<ReservationStatus>(request.Status, ignoreCase: true, out var status))
+                return BadRequest(new { message = "Invalid reservation status." });
+
+            reservation.Status = status;
+        }
+
+        reservation.UpdatedAt = DateTime.Now;
+        await _context.SaveChangesAsync();
+
+        var reservationResponseDto = new ReservationResponseDto
+        {
+            Id = reservation.Id,
+            RoomId = reservation.RoomId,
+            StartTime = reservation.StartTime,
+            EndTime = reservation.EndTime,
+            ReservedBy = reservation.ReservedBy,
+            Purpose = reservation.Purpose,
+            Status = reservation.Status.ToString(),
+            CreatedAt = reservation.CreatedAt,
+            UpdatedAt = reservation.UpdatedAt
+        };
+
+        return Ok(new { reservationResponseDto, test = timeOrRoomChanged });
+    }
 }
