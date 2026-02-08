@@ -65,4 +65,27 @@ public class ReservationsController : ControllerBase
 
         return Ok(reservationResponseDtos);
     }
+
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetReservation(int id)
+    {
+        var reservation = await _context.Reservations.FindAsync(id);
+        if (reservation == null)
+            return NotFound($"Reservation with ID {id} not found.");
+
+        var reservationResponseDto = new ReservationResponseDto
+        {
+            Id = reservation.Id,
+            RoomId = reservation.RoomId,
+            StartTime = reservation.StartTime,
+            EndTime = reservation.EndTime,
+            ReservedBy = reservation.ReservedBy,
+            Purpose = reservation.Purpose,
+            Status = reservation.Status.ToString(),
+            CreatedAt = reservation.CreatedAt,
+            UpdatedAt = reservation.UpdatedAt
+        };
+
+        return Ok(reservationResponseDto);
+    }
 }
