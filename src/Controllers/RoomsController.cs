@@ -1,7 +1,9 @@
+using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ResRoomApi.Data;
 using ResRoomApi.DTOs.Rooms;
+using ResRoomApi.Helpers;
 using ResRoomApi.Models;
 
 namespace ResRoomApi.Controllers;
@@ -18,11 +20,32 @@ public class RoomsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetRooms()
+    public async Task<IActionResult> GetRooms([FromQuery] RoomParams roomParams)
     {
-        var rooms = await _context.Rooms.ToListAsync();
-        
-        var roomResponseDtos = rooms.Select(r => new RoomResponseDto
+        var query = _context.Rooms.AsQueryable();
+
+        if (!string.IsNullOrEmpty(roomParams.SearchTerm))
+        {
+            var searchTerm = roomParams.SearchTerm.ToLower();
+            query = query.Where(r => r.Name.ToLower().Contains(searchTerm) || 
+                                     r.Location.ToLower().Contains(searchTerm));
+        }
+
+        if (roomParams.MinCapacity.HasValue)
+            query = query.Where(r => r.Capacity >= roomParams.MinCapacity.Value);
+
+        query = roomParams.SortBy?.ToLower() switch
+        {
+            "capacity" => roomParams.SortDirection == "desc" 
+                ? query.OrderByDescending(r => r.Capacity) 
+                : query.OrderBy(r => r.Capacity),
+            "location" => roomParams.SortDirection == "desc" 
+                ? query.OrderByDescending(r => r.Location) 
+                : query.OrderBy(r => r.Location),
+            _ => query.OrderBy(r => r.Name) // Default sort
+        };
+
+        var dtoQuery = query.Select(r => new RoomResponseDto
         {
             Id = r.Id,
             Name = r.Name,
@@ -31,9 +54,27 @@ public class RoomsController : ControllerBase
             Description = r.Description,
             CreatedAt = r.CreatedAt,
             UpdatedAt = r.UpdatedAt
-        }).ToList();
+        });
 
-        return Ok(roomResponseDtos);
+        var pagedList = await PagedList<RoomResponseDto>.CreateAsync(
+            dtoQuery,
+            roomParams.PageNumber,
+            roomParams.PageSize
+        );
+
+        var paginationMetadata = new
+        {
+            pagedList.TotalCount,
+            pagedList.PageSize,
+            pagedList.CurrentPage,
+            pagedList.TotalPages,
+            pagedList.HasNext,
+            pagedList.HasPrevious
+        };
+
+        Response.Headers.Append("X-Pagination", JsonSerializer.Serialize(paginationMetadata));
+
+        return Ok(pagedList);
     }
 
     [HttpGet("{id}")]
