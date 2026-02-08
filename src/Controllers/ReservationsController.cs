@@ -157,8 +157,9 @@ public class ReservationsController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreateReservation([FromBody] CreateReservationDto request)
     {
-        if (request.RoomId <= 0)
-            return BadRequest(new { message = "Invalid Room ID." });
+        var roomExists = await _context.Rooms.AnyAsync(r => r.Id == request.RoomId);
+        if (!roomExists)
+            return NotFound(new { message = $"Room with ID {request.RoomId} not found." });
 
         if (request.StartTime <= DateTime.Now)
             return BadRequest(new { message = "Start time must be in the future." });
@@ -211,7 +212,7 @@ public class ReservationsController : ControllerBase
     {
         var reservation = await _context.Reservations.FindAsync(id);
         if (reservation == null)
-            return NotFound($"Reservation with ID {id} not found.");
+            return NotFound(new { message = $"Reservation with ID {id} not found." });
 
         var newRoomId = request.RoomId ?? reservation.RoomId;
         var newStart = request.StartTime ?? reservation.StartTime;
@@ -222,10 +223,14 @@ public class ReservationsController : ControllerBase
             (request.EndTime.HasValue && request.EndTime.Value != reservation.EndTime) ||
             (request.RoomId.HasValue && request.RoomId.Value != reservation.RoomId);
 
-        if (request.RoomId.HasValue && request.RoomId <= 0)
-            return BadRequest(new { message = "Invalid Room ID." });
-        else
+        if (request.RoomId.HasValue)
+        {
+            var roomExists = await _context.Rooms.AnyAsync(r => r.Id == request.RoomId.Value);
+            if (!roomExists)
+                return NotFound(new { message = $"Room with ID {request.RoomId.Value} not found." });
+
             reservation.RoomId = newRoomId;
+        }
 
         if (request.StartTime.HasValue)
         {
@@ -288,7 +293,7 @@ public class ReservationsController : ControllerBase
     {
         var reservation = await _context.Reservations.FindAsync(id);
         if (reservation == null)
-            return NotFound($"Reservation with ID {id} not found.");
+            return NotFound(new { message = $"Reservation with ID {id} not found." });
 
         reservation.DeletedAt = DateTime.Now;
         await _context.SaveChangesAsync();
