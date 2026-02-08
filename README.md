@@ -82,12 +82,15 @@ The application requires the following environment variables to be set in `.env`
 
 ## Project Structure
 This project follows the **Clean Architecture** principles within a monolithic API structure:
+```text
+/src
 ├── Controllers/ # API Endpoints
 ├── Models/ # Database Entities
 ├── DTOs/ # Data Transfer Objects for API requests/responses & Input Validation
 ├── Data/ # DbContext and Config
 ├── Migrations/ # EF Core Migrations
 └── Program.cs # App Entry Point & DI Config
+```
 
 ## Contributing
 1.  Clone the repository.
