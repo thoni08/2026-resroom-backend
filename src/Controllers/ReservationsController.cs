@@ -217,4 +217,17 @@ public class ReservationsController : ControllerBase
 
         return Ok(new { reservationResponseDto, test = timeOrRoomChanged });
     }
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteReservation(int id)
+    {
+        var reservation = await _context.Reservations.FindAsync(id);
+        if (reservation == null)
+            return NotFound($"Reservation with ID {id} not found.");
+
+        reservation.DeletedAt = DateTime.Now;
+        await _context.SaveChangesAsync();
+
+        return Ok(new { message = $"Reservation with ID {id} deleted successfully." });
+    }
 }
