@@ -4,6 +4,7 @@ namespace ResRoomApi.DTOs.Reservations;
 
 public class UpdateReservationDto
 {
+    [Range(1, int.MaxValue, ErrorMessage = "Invalid Room ID.")]
     public int? RoomId { get; set; }
 
     [DataType(DataType.DateTime, ErrorMessage = "Start time must be a valid date and time.")]
