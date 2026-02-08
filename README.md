@@ -7,6 +7,8 @@ This project solves the issue of manual and decentralized recording by providing
 
 ## Features
 * **Master Room Management**: Full CRUD capabilities for managing room data (Name, Capacity, Location).
+* **Reservation Requests & Management**: Full CRUD capabilities for room reservations and management with strict date and room validations.
+* **Advanced Pagination & Filters**: Paginated data list responses with adjustable page sizes and filters data according to given conditions.
 * **Soft Delete**: Implements data safety by marking records as deleted instead of physically removing them from the database.
 * **RESTful Architecture**: Follows standard HTTP methods and status codes.
 * **Database Migrations**: Managed via Entity Framework Core.
@@ -28,7 +30,7 @@ Before you begin, ensure you have met the following requirements:
 1.  **Clone the repository**
     ```bash
     git clone https://github.com/thoni08/2026-resroom-backend.git
-    cd 2026-resroom-backend
+    cd 2026-resroom-backend/src # Make sure you are on the `src/` folder
     ```
 
 2.  **Restore dependencies**
@@ -46,7 +48,7 @@ Before you begin, ensure you have met the following requirements:
 4.  **Configure Database**
     Update your `.env` with your Microsoft SQL Server credentials:
     ```bash
-    CONNECTION_STRINGS=Server=localhost,1433;Database=ResRoom;User Id=username;Password=Password123_;TrustServerCertificate=True;
+    CONNECTION_STRINGS=Server=localhost,1234;Database=YourDatabaseName;User Id=yourusername;Password=YourStrongPassword123_;TrustServerCertificate=True;
     ```
 
 5.  **Run Migrations**
@@ -59,39 +61,46 @@ Before you begin, ensure you have met the following requirements:
 
 1.  **Run the Application**
     ```bash
+    cd src/ # Make sure you are on the `src/` folder
     dotnet run
     ```
-    You can also run the application in development environment (enables hot-reload)
+    You can also run the application with hot-reload (for development ease)
     ```bash
     dotnet watch
     ```
 
-2.  **Access API Documentation**
-    If you run in a development environment, open your browser and navigate to the Swagger UI to test endpoints:
+3.  **Access API Documentation**
+    If you run in a development environment, open your browser and navigate to the Swagger UI to test endpoints
     ```
     http://localhost:5xxx/swagger
     ```
 
 ## Environment Variables
-The application requires the following environment variables to be set in `.env` or `appsettings.Development.json`:
+The application requires the following environment variables to be set in `.env`:
 
 | Variable | Description |
 | :--- | :--- |
 | `CONNECTION_STRINGS` | Microsoft SQL Server connection string |
+| `ALLOWED_ORIGINS` | Allowed Front-end URLs to access API |
 | `ASPNETCORE_ENVIRONMENT` | Set to `Development` for local testing |
 
 ## Project Structure
 This project follows the **Clean Architecture** principles within a monolithic API structure:
+```text
+/src
 ├── Controllers/ # API Endpoints
-├── Models/ # Database Entities
-├── DTOs/ # Data Transfer Objects for API requests/responses & Input Validation
 ├── Data/ # DbContext and Config
+├── DTOs/ # Data Transfer Objects for API requests/responses & Input Validation
+├── Helpers/ # Utility classes for shared functionality
 ├── Migrations/ # EF Core Migrations
+├── Models/ # Database Entities
+├── Services/ # Isolates complex controller logic and domain rules
 └── Program.cs # App Entry Point & DI Config
+```
 
 ## Contributing
 1.  Clone the repository.
-2.  Create a new branch: `git checkout -b feature/your-feature-name`
+2.  Create a new branch (inherit from `develop` branch, preferably): `git checkout -b feature/your-feature-name`
 3.  Commit your changes following **Conventional Commits**: `git commit -m "feat: add new room property"`.
 4.  Push to the branch: `git push origin feature/your-feature-name`.
 5.  Submit a pull request.
