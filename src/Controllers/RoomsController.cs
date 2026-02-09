@@ -82,7 +82,15 @@ public class RoomsController : ControllerBase
     {
         var room = await _context.Rooms.FindAsync(id);
         if (room == null)
-            return NotFound($"Room with ID {id} not found.");
+        {
+            ModelState.AddModelError("Id", $"Room with ID {id} not found.");
+            return ValidationProblem(
+                statusCode: StatusCodes.Status404NotFound,
+                modelStateDictionary: ModelState,
+                title: "Not Found",
+                detail: "The requested room does not exist."
+            );   
+        }
 
         var roomResponseDto = new RoomResponseDto
         {
@@ -133,7 +141,15 @@ public class RoomsController : ControllerBase
     {
         var room = await _context.Rooms.FindAsync(id);
         if (room == null)
-            return NotFound($"Room with ID {id} not found.");
+        {
+            ModelState.AddModelError("Id", $"Room with ID {id} not found.");
+            return ValidationProblem(
+                statusCode: StatusCodes.Status404NotFound,
+                modelStateDictionary: ModelState,
+                title: "Not Found",
+                detail: "The requested room does not exist."
+            );
+        }
 
         if (request.Name != null)
             room.Name = request.Name;
@@ -170,7 +186,15 @@ public class RoomsController : ControllerBase
     {
         var room = await _context.Rooms.FindAsync(id);
         if (room == null)
-            return NotFound($"Room with ID {id} not found.");
+        {
+            ModelState.AddModelError("Id", $"Room with ID {id} not found.");
+            return ValidationProblem(
+                statusCode: StatusCodes.Status404NotFound,
+                modelStateDictionary: ModelState,
+                title: "Not Found",
+                detail: "The requested room does not exist."
+            );
+        }
 
         room.DeletedAt = DateTime.Now;
         await _context.SaveChangesAsync();
