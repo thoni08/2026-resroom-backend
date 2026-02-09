@@ -29,20 +29,5 @@ public static class ModelBuilderExtensions
                 UpdatedAt = DateTime.Now
             }
         );
-
-        modelBuilder.Entity<Reservation>().HasData(
-            new Reservation
-            {
-                Id = 1,
-                RoomId = 2,
-                StartTime = DateTime.Now.AddDays(1).AddHours(9),
-                EndTime = DateTime.Now.AddDays(1).AddHours(11),
-                ReservedBy = "Alice Johnson",
-                Purpose = "Project Kickoff Meeting",
-                Status = ReservationStatus.Approved,
-                CreatedAt = DateTime.Now,
-                UpdatedAt = DateTime.Now
-            }
-        );
     }
 }
