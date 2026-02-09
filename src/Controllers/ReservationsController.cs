@@ -136,7 +136,15 @@ public class ReservationsController : ControllerBase
     {
         var reservation = await _context.Reservations.FindAsync(id);
         if (reservation == null)
-            return NotFound($"Reservation with ID {id} not found.");
+        { 
+            ModelState.AddModelError("Id", $"Reservation with ID {id} not found.");
+            return ValidationProblem(
+                statusCode: StatusCodes.Status404NotFound,
+                modelStateDictionary: ModelState,
+                title: "Not Found",
+                detail: "The requested reservation does not exist."
+            );
+        }
 
         var reservationResponseDto = new ReservationResponseDto
         {
@@ -159,22 +167,36 @@ public class ReservationsController : ControllerBase
     {
         var roomExists = await _context.Rooms.AnyAsync(r => r.Id == request.RoomId);
         if (!roomExists)
-            return NotFound(new { message = $"Room with ID {request.RoomId} not found." });
+        {
+            ModelState.AddModelError("RoomId", $"Room with ID {request.RoomId} not found.");
+            return ValidationProblem(
+                statusCode: StatusCodes.Status404NotFound,
+                modelStateDictionary: ModelState,
+                title: "Not Found",
+                detail: "The requested room does not exist."
+            );
+        }
 
         if (request.StartTime <= DateTime.Now)
-            return BadRequest(new { message = "Start time must be in the future." });
+            ModelState.AddModelError("StartTime", "Start time must be in the future.");
 
         if (request.EndTime <= DateTime.Now)
-            return BadRequest(new { message = "End time must be in the future." });
+            ModelState.AddModelError("EndTime", "End time must be in the future.");
 
         if (request.StartTime >= request.EndTime)
-            return BadRequest(new { message = "End time must be after start time." });
+            ModelState.AddModelError("EndTime", "End time must be after start time.");
 
         if (!await _reservationService.IsRoomAvailableAsync(request.RoomId, request.StartTime, request.EndTime))
-            return Conflict(new { message = "Room is not available for the selected time." });
+            ModelState.AddModelError("RoomAvailability", "Room is not available for the selected time.");
 
-        if (!Enum.TryParse<ReservationStatus>(request.Status, ignoreCase: true, out var status))
-            return BadRequest(new { message = "Invalid reservation status." });
+        if (!ModelState.IsValid)
+        {
+            return ValidationProblem(
+                statusCode: StatusCodes.Status400BadRequest,
+                modelStateDictionary: ModelState,
+                title: "One or more validation errors occurred."
+            );
+        }
 
         var reservation = new Reservation
         {
@@ -183,7 +205,7 @@ public class ReservationsController : ControllerBase
             EndTime = request.EndTime,
             ReservedBy = request.ReservedBy,
             Purpose = request.Purpose,
-            Status = status,
+            Status = request.Status,
             CreatedAt = DateTime.Now,
             UpdatedAt = DateTime.Now
         };
@@ -212,7 +234,15 @@ public class ReservationsController : ControllerBase
     {
         var reservation = await _context.Reservations.FindAsync(id);
         if (reservation == null)
-            return NotFound(new { message = $"Reservation with ID {id} not found." });
+        {
+            ModelState.AddModelError("Id", $"Reservation with ID {id} not found.");
+            return ValidationProblem(
+                statusCode: StatusCodes.Status404NotFound,
+                modelStateDictionary: ModelState,
+                title: "Not Found",
+                detail: "The requested reservation does not exist."
+            );
+        }
 
         var newRoomId = request.RoomId ?? reservation.RoomId;
         var newStart = request.StartTime ?? reservation.StartTime;
@@ -227,7 +257,15 @@ public class ReservationsController : ControllerBase
         {
             var roomExists = await _context.Rooms.AnyAsync(r => r.Id == request.RoomId.Value);
             if (!roomExists)
-                return NotFound(new { message = $"Room with ID {request.RoomId.Value} not found." });
+            {
+                ModelState.AddModelError("RoomId", $"Room with ID {request.RoomId.Value} not found.");
+                return ValidationProblem(
+                    statusCode: StatusCodes.Status404NotFound,
+                    modelStateDictionary: ModelState,
+                    title: "Not Found",
+                    detail: "The requested room does not exist."
+                );
+            }
 
             reservation.RoomId = newRoomId;
         }
@@ -235,25 +273,34 @@ public class ReservationsController : ControllerBase
         if (request.StartTime.HasValue)
         {
             if (newStart <= DateTime.Now)
-                return BadRequest(new { message = "Start time must be in the future." });
-
-            reservation.StartTime = newStart;
+                ModelState.AddModelError("StartTime", "Start time must be in the future.");
+            else
+                reservation.StartTime = newStart;
         }
 
         if (request.EndTime.HasValue)
         {
             if (newEnd <= DateTime.Now)
-                return BadRequest(new { message = "End time must be in the future." });
-
-            reservation.EndTime = newEnd;
+                ModelState.AddModelError("EndTime", "End time must be in the future.");
+            else
+                reservation.EndTime = newEnd;
         }
 
         if (newStart >= newEnd)
-            return BadRequest(new { message = "End time must be after start time." });
+            ModelState.AddModelError("EndTime", "End time must be after start time.");
 
         if (timeOrRoomChanged &&
             !await _reservationService.IsRoomAvailableAsync(newRoomId, newStart, newEnd))
-            return Conflict(new { message = "Room is not available for the selected time." });
+            ModelState.AddModelError("RoomAvailability", "Room is not available for the selected time.");
+
+        if (!ModelState.IsValid)
+        {
+            return ValidationProblem(
+                statusCode: StatusCodes.Status400BadRequest,
+                modelStateDictionary: ModelState,
+                title: "One or more validation errors occurred."
+            );
+        }
 
         if (!string.IsNullOrEmpty(request.ReservedBy))
             reservation.ReservedBy = request.ReservedBy;
@@ -261,13 +308,8 @@ public class ReservationsController : ControllerBase
         if (!string.IsNullOrEmpty(request.Purpose))
             reservation.Purpose = request.Purpose;
 
-        if (!string.IsNullOrEmpty(request.Status))
-        {
-            if (!Enum.TryParse<ReservationStatus>(request.Status, ignoreCase: true, out var status))
-                return BadRequest(new { message = "Invalid reservation status." });
-
-            reservation.Status = status;
-        }
+        if (request.Status.HasValue)
+            reservation.Status = request.Status.Value;
 
         reservation.UpdatedAt = DateTime.Now;
         await _context.SaveChangesAsync();
@@ -285,7 +327,7 @@ public class ReservationsController : ControllerBase
             UpdatedAt = reservation.UpdatedAt
         };
 
-        return Ok(new { reservationResponseDto, test = timeOrRoomChanged });
+        return Ok(reservationResponseDto);
     }
 
     [HttpDelete("{id}")]
@@ -293,7 +335,15 @@ public class ReservationsController : ControllerBase
     {
         var reservation = await _context.Reservations.FindAsync(id);
         if (reservation == null)
-            return NotFound(new { message = $"Reservation with ID {id} not found." });
+        {
+            ModelState.AddModelError("Id", $"Reservation with ID {id} not found.");
+            return ValidationProblem(
+                statusCode: StatusCodes.Status404NotFound,
+                modelStateDictionary: ModelState,
+                title: "Not Found",
+                detail: "The requested reservation does not exist."
+            );            
+        }
 
         reservation.DeletedAt = DateTime.Now;
         await _context.SaveChangesAsync();
