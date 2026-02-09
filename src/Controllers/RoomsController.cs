@@ -36,13 +36,15 @@ public class RoomsController : ControllerBase
 
         query = roomParams.SortBy?.ToLower() switch
         {
+            "name" => roomParams.SortDirection == "desc" 
+                ? query.OrderByDescending(r => r.Name) 
+                : query.OrderBy(r => r.Name),
             "capacity" => roomParams.SortDirection == "desc" 
                 ? query.OrderByDescending(r => r.Capacity) 
                 : query.OrderBy(r => r.Capacity),
-            "location" => roomParams.SortDirection == "desc" 
-                ? query.OrderByDescending(r => r.Location) 
-                : query.OrderBy(r => r.Location),
-            _ => query.OrderBy(r => r.Name) // Default sort
+            _ => roomParams.SortDirection == "desc"
+                ? query.OrderByDescending(r => r.Name)
+                : query.OrderBy(r => r.Name)
         };
 
         var dtoQuery = query.Select(r => new RoomResponseDto
