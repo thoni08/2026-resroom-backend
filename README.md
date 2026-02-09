@@ -92,6 +92,7 @@ This project follows the **Clean Architecture** principles within a monolithic A
 ├── Data/ # DbContext and Config
 ├── DTOs/ # Data Transfer Objects for API requests/responses & Input Validation
 ├── Helpers/ # Utility classes for shared functionality
+├── Middleware/ # Custom HTTP pipeline components
 ├── Migrations/ # EF Core Migrations
 ├── Models/ # Database Entities
 ├── Services/ # Isolates complex controller logic and domain rules
