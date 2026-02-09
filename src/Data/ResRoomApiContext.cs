@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using ResRoomApi.Data.Extensions;
 using ResRoomApi.Models;
 
 namespace ResRoomApi.Data;
@@ -14,6 +15,8 @@ public class ResRoomApiContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        modelBuilder.Seed();
 
         modelBuilder.Entity<Room>()
             .HasQueryFilter(r => r.DeletedAt == null);
