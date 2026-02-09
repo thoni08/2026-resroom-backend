@@ -17,11 +17,6 @@ public class ResRoomApiContext : DbContext
         base.OnModelCreating(modelBuilder);
 
         modelBuilder.Seed();
-
-        modelBuilder.Entity<Room>()
-            .HasQueryFilter(r => r.DeletedAt == null);
-
-        modelBuilder.Entity<Reservation>()
-            .HasQueryFilter(r => r.DeletedAt == null);
+        modelBuilder.ConfigureSoftDeleteQuery();
     }
 }

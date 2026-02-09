@@ -32,4 +32,13 @@ public static class ModelBuilderExtensions
             }
         );
     }
+
+    public static void ConfigureSoftDeleteQuery(this ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<Room>()
+            .HasQueryFilter(r => r.DeletedAt == null);
+
+        modelBuilder.Entity<Reservation>()
+            .HasQueryFilter(r => r.DeletedAt == null);
+    }
 }
