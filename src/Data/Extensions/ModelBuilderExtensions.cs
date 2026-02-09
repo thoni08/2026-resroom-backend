@@ -7,6 +7,8 @@ public static class ModelBuilderExtensions
 {
     public static void Seed(this ModelBuilder modelBuilder)
     {
+        var seedTimestamp = new DateTime(2026, 2, 9, 0, 0, 0, DateTimeKind.Local);
+
         modelBuilder.Entity<Room>().HasData(
             new Room
             {
@@ -15,8 +17,8 @@ public static class ModelBuilderExtensions
                 Capacity = 30,
                 Location = "First Floor - East Building",
                 Description = "A spacious conference room equipped with a projector and whiteboard.",
-                CreatedAt = DateTime.Now,
-                UpdatedAt = DateTime.Now
+                CreatedAt = seedTimestamp,
+                UpdatedAt = seedTimestamp
             },
             new Room
             {
@@ -25,8 +27,8 @@ public static class ModelBuilderExtensions
                 Capacity = 10,
                 Location = "Second Floor - West Building",
                 Description = "A cozy meeting room suitable for small team discussions.",
-                CreatedAt = DateTime.Now,
-                UpdatedAt = DateTime.Now
+                CreatedAt = seedTimestamp,
+                UpdatedAt = seedTimestamp
             }
         );
     }
