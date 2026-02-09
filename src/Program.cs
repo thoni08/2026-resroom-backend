@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using DotNetEnv;
 using ResRoomApi.Data;
 using ResRoomApi.Services;
+using ResRoomApi.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -49,6 +50,8 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
+
+app.UseMiddleware<ExceptionMiddleware>();
 
 if (app.Environment.IsDevelopment())
 {
