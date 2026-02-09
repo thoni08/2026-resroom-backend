@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1] - 2026-02-09
+
+### Added
+- **Global Error Handling:** Implemented `ExceptionMiddleware` to catch unhandled system exceptions (e.g., database failures) and return standardized JSON responses.
+- **Validation Standards:** Updated all controllers to use `ValidationProblem()` details (RFC 7807) for consistent error 4XX responses.
+- **JSON Handling:** Added `ReservationStatusConverter` to provide user-friendly error messages when invalid Enum values (e.g., "status": "invalid") are submitted.
+- **Database Seeder:** Implemented `ModelBuilderExtensions` to automatically populate the database with initial sample data (Rooms) during migrations.
+
+### Fixed
+- **Room Sorting:** Fixed a bug in `GET /api/rooms` where sorting by `name` ignored the `sortDirection` parameter and always defaulted to Ascending (A-Z).
+
 ## [1.0.0] - 2026-02-08
 
 ### Added

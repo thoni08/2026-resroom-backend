@@ -1,4 +1,7 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
+using ResRoomApi.Helpers.Json;
+using ResRoomApi.Models;
 
 namespace ResRoomApi.DTOs.Reservations;
 
@@ -25,5 +28,6 @@ public class CreateReservationDto
     public string Purpose { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Reservation status is required.")]
-    public string Status { get; set; } = "Pending";
+    [JsonConverter(typeof(ReservationStatusConverter))]
+    public ReservationStatus Status { get; set; } = ReservationStatus.Pending;
 }

@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using ResRoomApi.Data.Extensions;
 using ResRoomApi.Models;
 
 namespace ResRoomApi.Data;
@@ -15,10 +16,7 @@ public class ResRoomApiContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
 
-        modelBuilder.Entity<Room>()
-            .HasQueryFilter(r => r.DeletedAt == null);
-
-        modelBuilder.Entity<Reservation>()
-            .HasQueryFilter(r => r.DeletedAt == null);
+        modelBuilder.Seed();
+        modelBuilder.ConfigureSoftDeleteQuery();
     }
 }

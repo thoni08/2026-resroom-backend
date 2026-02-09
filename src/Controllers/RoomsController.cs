@@ -36,13 +36,15 @@ public class RoomsController : ControllerBase
 
         query = roomParams.SortBy?.ToLower() switch
         {
+            "name" => roomParams.SortDirection == "desc" 
+                ? query.OrderByDescending(r => r.Name) 
+                : query.OrderBy(r => r.Name),
             "capacity" => roomParams.SortDirection == "desc" 
                 ? query.OrderByDescending(r => r.Capacity) 
                 : query.OrderBy(r => r.Capacity),
-            "location" => roomParams.SortDirection == "desc" 
-                ? query.OrderByDescending(r => r.Location) 
-                : query.OrderBy(r => r.Location),
-            _ => query.OrderBy(r => r.Name) // Default sort
+            _ => roomParams.SortDirection == "desc"
+                ? query.OrderByDescending(r => r.Name)
+                : query.OrderBy(r => r.Name)
         };
 
         var dtoQuery = query.Select(r => new RoomResponseDto
@@ -82,7 +84,15 @@ public class RoomsController : ControllerBase
     {
         var room = await _context.Rooms.FindAsync(id);
         if (room == null)
-            return NotFound($"Room with ID {id} not found.");
+        {
+            ModelState.AddModelError("Id", $"Room with ID {id} not found.");
+            return ValidationProblem(
+                statusCode: StatusCodes.Status404NotFound,
+                modelStateDictionary: ModelState,
+                title: "Not Found",
+                detail: "The requested room does not exist."
+            );   
+        }
 
         var roomResponseDto = new RoomResponseDto
         {
@@ -133,7 +143,15 @@ public class RoomsController : ControllerBase
     {
         var room = await _context.Rooms.FindAsync(id);
         if (room == null)
-            return NotFound($"Room with ID {id} not found.");
+        {
+            ModelState.AddModelError("Id", $"Room with ID {id} not found.");
+            return ValidationProblem(
+                statusCode: StatusCodes.Status404NotFound,
+                modelStateDictionary: ModelState,
+                title: "Not Found",
+                detail: "The requested room does not exist."
+            );
+        }
 
         if (request.Name != null)
             room.Name = request.Name;
@@ -170,7 +188,15 @@ public class RoomsController : ControllerBase
     {
         var room = await _context.Rooms.FindAsync(id);
         if (room == null)
-            return NotFound($"Room with ID {id} not found.");
+        {
+            ModelState.AddModelError("Id", $"Room with ID {id} not found.");
+            return ValidationProblem(
+                statusCode: StatusCodes.Status404NotFound,
+                modelStateDictionary: ModelState,
+                title: "Not Found",
+                detail: "The requested room does not exist."
+            );
+        }
 
         room.DeletedAt = DateTime.Now;
         await _context.SaveChangesAsync();

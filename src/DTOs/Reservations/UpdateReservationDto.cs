@@ -1,4 +1,7 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
+using ResRoomApi.Helpers.Json;
+using ResRoomApi.Models;
 
 namespace ResRoomApi.DTOs.Reservations;
 
@@ -19,5 +22,6 @@ public class UpdateReservationDto
     [MaxLength(300, ErrorMessage = "Reservation purpose cannot exceed 300 characters.")]
     public string? Purpose { get; set; }
 
-    public string? Status { get; set; }
+    [JsonConverter(typeof(ReservationStatusConverter))]
+    public ReservationStatus? Status { get; set; }
 }

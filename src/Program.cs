@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using DotNetEnv;
 using ResRoomApi.Data;
 using ResRoomApi.Services;
+using ResRoomApi.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -38,8 +39,14 @@ builder.Services.AddCors(options =>
 
 // Enable controllers and JSON enum serialization
 builder.Services.AddControllers()
-    .AddJsonOptions(options =>
-        options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter()));
+    .AddJsonOptions(options => {
+        options.JsonSerializerOptions.Converters.Add(
+            new System.Text.Json.Serialization.JsonStringEnumConverter(
+                System.Text.Json.JsonNamingPolicy.CamelCase,
+                allowIntegerValues: true));
+        options.JsonSerializerOptions.Converters.Add(
+            new ResRoomApi.Helpers.Json.ReservationStatusConverter());
+    });
 
 // Register ReservationService for dependency injection
 builder.Services.AddScoped<IReservationService, ReservationService>();
@@ -49,6 +56,8 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
+
+app.UseMiddleware<ExceptionMiddleware>();
 
 if (app.Environment.IsDevelopment())
 {
