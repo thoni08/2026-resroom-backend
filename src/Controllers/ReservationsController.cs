@@ -187,7 +187,7 @@ public class ReservationsController : ControllerBase
             ModelState.AddModelError("EndTime", "End time must be after start time.");
 
         if (!await _reservationService.IsRoomAvailableAsync(request.RoomId, request.StartTime, request.EndTime))
-            ModelState.AddModelError("RoomAvailability", "Room is not available for the selected time.");
+            ModelState.AddModelError("RoomId", "Room is not available for the selected time.");
 
         if (!ModelState.IsValid)
         {
@@ -272,16 +272,16 @@ public class ReservationsController : ControllerBase
 
         if (request.StartTime.HasValue)
         {
-            if (newStart <= DateTime.Now)
-                ModelState.AddModelError("StartTime", "Start time must be in the future.");
+            if (newStart < reservation.StartTime)
+                ModelState.AddModelError("StartTime", "Start time cannot be before the existing reservation start time.");
             else
                 reservation.StartTime = newStart;
         }
 
         if (request.EndTime.HasValue)
         {
-            if (newEnd <= DateTime.Now)
-                ModelState.AddModelError("EndTime", "End time must be in the future.");
+            if (newEnd < reservation.EndTime)
+                ModelState.AddModelError("EndTime", "End time cannot be before the existing reservation end time.");
             else
                 reservation.EndTime = newEnd;
         }
@@ -291,7 +291,7 @@ public class ReservationsController : ControllerBase
 
         if (timeOrRoomChanged &&
             !await _reservationService.IsRoomAvailableAsync(newRoomId, newStart, newEnd))
-            ModelState.AddModelError("RoomAvailability", "Room is not available for the selected time.");
+            ModelState.AddModelError("RoomId", "Room is not available for the selected time.");
 
         if (!ModelState.IsValid)
         {
