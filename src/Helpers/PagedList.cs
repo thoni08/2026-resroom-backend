@@ -17,13 +17,19 @@ public class PagedList<T> : List<T>
         TotalCount = count;
         PageSize = pageSize;
         CurrentPage = pageNumber;
-        TotalPages = (int)Math.Ceiling(count / (double)pageSize);
+        TotalPages = pageSize == 0 ? 1 : (int)Math.Ceiling(count / (double)pageSize);
 
         AddRange(items);
     }
 
     public static async Task<PagedList<T>> CreateAsync(IQueryable<T> source, int pageNumber, int pageSize)
     {
+        if (pageSize == 0)
+        {
+            var allItems = await source.ToListAsync();
+            return new PagedList<T>(allItems, allItems.Count, 1, 0);
+        }
+
         var count = await source.CountAsync();
         var items = await source.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync();
         return new PagedList<T>(items, count, pageNumber, pageSize);
