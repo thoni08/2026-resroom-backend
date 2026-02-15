@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.2] - 2026-02-15
+
+### Added
+- **Pagination Improvements:** Updated Pagination result to display all items when a specific criteria is triggered.
+
+### Fixed
+- **Max Capacity Filter in Rooms:** Implemented 'missing' `MaxCapacity` filter in Rooms to ensure detailed room capacity filtering.
+- **Specifically Time Validation:** Updated validation error for room availability
+
 ## [1.0.1] - 2026-02-09
 
 ### Added
