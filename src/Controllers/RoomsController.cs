@@ -34,6 +34,9 @@ public class RoomsController : ControllerBase
         if (roomParams.MinCapacity.HasValue)
             query = query.Where(r => r.Capacity >= roomParams.MinCapacity.Value);
 
+        if (roomParams.MaxCapacity.HasValue)
+            query = query.Where(r => r.Capacity <= roomParams.MaxCapacity.Value);
+
         query = roomParams.SortBy?.ToLower() switch
         {
             "capacity" => roomParams.SortDirection == "desc" 
